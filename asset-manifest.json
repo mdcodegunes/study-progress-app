@@ -1,0 +1,20 @@
+{
+  "files": {
+    "main.css": "/study-progress-app/static/css/main.ff29bae8.chunk.css",
+    "main.js": "/study-progress-app/static/js/main.9c120386.chunk.js",
+    "main.js.map": "/study-progress-app/static/js/main.9c120386.chunk.js.map",
+    "runtime-main.js": "/study-progress-app/static/js/runtime-main.e742740c.js",
+    "runtime-main.js.map": "/study-progress-app/static/js/runtime-main.e742740c.js.map",
+    "static/js/2.bcf289cc.chunk.js": "/study-progress-app/static/js/2.bcf289cc.chunk.js",
+    "static/js/2.bcf289cc.chunk.js.map": "/study-progress-app/static/js/2.bcf289cc.chunk.js.map",
+    "index.html": "/study-progress-app/index.html",
+    "static/css/main.ff29bae8.chunk.css.map": "/study-progress-app/static/css/main.ff29bae8.chunk.css.map",
+    "static/js/2.bcf289cc.chunk.js.LICENSE.txt": "/study-progress-app/static/js/2.bcf289cc.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.e742740c.js",
+    "static/js/2.bcf289cc.chunk.js",
+    "static/css/main.ff29bae8.chunk.css",
+    "static/js/main.9c120386.chunk.js"
+  ]
+}
