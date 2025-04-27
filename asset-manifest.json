@@ -1,20 +1,20 @@
 {
   "files": {
     "main.css": "/study-progress-app/static/css/main.ff29bae8.chunk.css",
-    "main.js": "/study-progress-app/static/js/main.2e1f205e.chunk.js",
-    "main.js.map": "/study-progress-app/static/js/main.2e1f205e.chunk.js.map",
+    "main.js": "/study-progress-app/static/js/main.ac4ceba5.chunk.js",
+    "main.js.map": "/study-progress-app/static/js/main.ac4ceba5.chunk.js.map",
     "runtime-main.js": "/study-progress-app/static/js/runtime-main.e742740c.js",
     "runtime-main.js.map": "/study-progress-app/static/js/runtime-main.e742740c.js.map",
-    "static/js/2.1839fceb.chunk.js": "/study-progress-app/static/js/2.1839fceb.chunk.js",
-    "static/js/2.1839fceb.chunk.js.map": "/study-progress-app/static/js/2.1839fceb.chunk.js.map",
+    "static/js/2.1561f374.chunk.js": "/study-progress-app/static/js/2.1561f374.chunk.js",
+    "static/js/2.1561f374.chunk.js.map": "/study-progress-app/static/js/2.1561f374.chunk.js.map",
     "index.html": "/study-progress-app/index.html",
     "static/css/main.ff29bae8.chunk.css.map": "/study-progress-app/static/css/main.ff29bae8.chunk.css.map",
-    "static/js/2.1839fceb.chunk.js.LICENSE.txt": "/study-progress-app/static/js/2.1839fceb.chunk.js.LICENSE.txt"
+    "static/js/2.1561f374.chunk.js.LICENSE.txt": "/study-progress-app/static/js/2.1561f374.chunk.js.LICENSE.txt"
   },
   "entrypoints": [
     "static/js/runtime-main.e742740c.js",
-    "static/js/2.1839fceb.chunk.js",
+    "static/js/2.1561f374.chunk.js",
     "static/css/main.ff29bae8.chunk.css",
-    "static/js/main.2e1f205e.chunk.js"
+    "static/js/main.ac4ceba5.chunk.js"
   ]
 }
