@@ -10,9 +10,10 @@ const LessonForm: React.FC<{ onAddLesson: (lesson: { title: string; date: string
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [title, setTitle] = useState('');
     const [pageStudied, setPageStudied] = useState('');
-    const [hoursStudied, setHoursStudied] = useState('');
     const [questionsSolved, setQuestionsSolved] = useState('');
     const [selectedLesson, setSelectedLesson] = useState('');
+    const [hours, setHours] = useState('');
+    const [minutes, setMinutes] = useState('');
 
     useEffect(() => {
       const last = localStorage.getItem('lastSelectedLesson');
@@ -21,17 +22,20 @@ const LessonForm: React.FC<{ onAddLesson: (lesson: { title: string; date: string
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
+        const totalHours =
+          Number(hours) + Number(minutes) / 60;
         onAddLesson({
             title: selectedLesson, // <-- use selectedLesson here!
             date,
             pageStudied: Number(pageStudied),
-            hoursStudied: Number(hoursStudied),
+            hoursStudied: totalHours,
             questionsSolved: Number(questionsSolved)
         });
         setTitle('');
         setPageStudied('');
-        setHoursStudied('');
         setQuestionsSolved('');
+        setHours('');
+        setMinutes('');
         setDate(new Date().toISOString().split('T')[0]);
     };
 
@@ -75,8 +79,27 @@ const LessonForm: React.FC<{ onAddLesson: (lesson: { title: string; date: string
             </div>
             <div>
                 <label>
-                    Çalışılan Saat:
-                    <input type="number" value={hoursStudied} onChange={e => setHoursStudied(e.target.value)} required />
+                    Saat:
+                    <input
+                      type="number"
+                      min="0"
+                      value={hours}
+                      onChange={e => setHours(e.target.value)}
+                      required
+                      style={{ width: 60, marginRight: 8 }}
+                    />
+                </label>
+                <label>
+                    Dakika:
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={minutes}
+                      onChange={e => setMinutes(e.target.value)}
+                      required
+                      style={{ width: 60 }}
+                    />
                 </label>
             </div>
             <button type="submit">Kaydet</button>
