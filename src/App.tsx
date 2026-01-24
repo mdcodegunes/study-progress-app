@@ -1,52 +1,90 @@
 import React, { useState, useEffect } from 'react';
 import LessonForm from './components/LessonForm';
 import ProgressList from './components/ProgressList';
-import LessonPagesForm, { getLessonTotalPages } from './components/LessonPagesForm';
+import LessonPagesForm from './components/LessonPagesForm';
 import { Lesson } from './types';
-import { loadProgress, saveProgress } from './utils/storage';
+import { db, addLessonToFirestore } from './firebase';
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 
 const App: React.FC = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [repeatTimes, setRepeatTimes] = useState<Record<string, number>>({});
   const [showPagesForm, setShowPagesForm] = useState(false);
+  const [lessonTotalPages, setLessonTotalPages] = useState<Record<string, number>>({});
+  const [lessonPagesLoaded, setLessonPagesLoaded] = useState(false);
+
+  // Fetch lessons from Firestore
+  const fetchLessons = async () => {
+    const snapshot = await getDocs(collection(db, "lessons"));
+    setLessons(
+      snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title || "",
+          pageStudied: data.pageStudied || 0,
+          totalPages: data.totalPages || 1,
+          repeatTimes: data.repeatTimes || 1,
+          date: data.date || "",
+          hoursStudied: data.hoursStudied || 0,
+          questionsSolved: data.questionsSolved || 0,
+        };
+      })
+    );
+  };
 
   useEffect(() => {
-    setLessons(loadProgress());
+    fetchLessons();
+
+    async function fetchLessonPages() {
+      const snapshot = await getDocs(collection(db, "lessonPages"));
+      const data: Record<string, number> = {};
+      snapshot.forEach(docSnap => {
+        data[docSnap.id] = Number(docSnap.data().totalPages) || 1;
+      });
+      setLessonTotalPages(data);
+      setLessonPagesLoaded(true);
+    }
+    fetchLessonPages();
   }, []);
 
-  const onAddLesson = (lesson: { title: string; date: string; pageStudied: number; hoursStudied: number; questionsSolved: number }) => {
-    const totalPages = getLessonTotalPages()[lesson.title] || 1;
+  // Add lesson to Firestore and update state
+  const onAddLesson = async (lesson: Omit<Lesson, "id" | "totalPages" | "repeatTimes">) => {
+    const totalPages = lessonTotalPages[lesson.title] || 1;
     let newRepeatTimes = repeatTimes[lesson.title] || 1;
     let newPageStudied = lesson.pageStudied;
 
-    // Check if completed
     if (newPageStudied >= totalPages) {
       newRepeatTimes += 1;
-      newPageStudied = 0;
+      newPageStudied = newPageStudied - totalPages;
     }
 
-    setRepeatTimes({ ...repeatTimes, [lesson.title]: newRepeatTimes });
+    setRepeatTimes(prev => ({ ...prev, [lesson.title]: newRepeatTimes }));
 
-    const updatedLessons = [
-      ...lessons,
-      {
-        ...lesson,
-        totalPages,
-        repeatTimes: newRepeatTimes,
-        pageStudied: newPageStudied
-      }
-    ];
-    setLessons(updatedLessons);
-    saveProgress(updatedLessons);
+    const lessonWithMeta: Lesson = {
+      ...lesson,
+      totalPages,
+      repeatTimes: newRepeatTimes,
+      pageStudied: newPageStudied,
+      id: Math.random().toString(36).substr(2, 9), // Temporary ID for React key
+    };
+
+    // Optimistically update UI
+    setLessons(prev => [lessonWithMeta, ...prev]);
+
+    // Add to Firestore
+    await addLessonToFirestore(lessonWithMeta);
+
+    // Fetch again to get the real data (with correct Firestore IDs)
+    await fetchLessons();
   };
 
-  const onDeleteLesson = (index: number) => {
-    const updatedLessons = lessons.filter((_, i) => i !== index);
-    setLessons(updatedLessons);
-    saveProgress(updatedLessons);
+  // Delete lesson from Firestore and update state
+  const onDeleteLesson = async (id: string) => {
+    await deleteDoc(doc(db, "lessons", id));
+    await fetchLessons();
   };
 
-  // Show LessonPagesForm as a full page/modal
   if (showPagesForm) {
     return (
       <div style={{
@@ -102,19 +140,23 @@ const App: React.FC = () => {
       </button>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
         <div style={{ flex: '1 1 340px', minWidth: 320, maxWidth: 400 }}>
-          <LessonForm onAddLesson={onAddLesson} />
+          <LessonForm onAddLesson={onAddLesson} disabled={!lessonPagesLoaded} />
         </div>
         <div style={{ flex: '2 1 400px', minWidth: 320 }}>
-          {/* Only the line graph, not the whole ProgressList */}
           <ProgressList
             progressList={lessons}
             onDeleteLesson={onDeleteLesson}
+            lessonTotalPages={lessonTotalPages}
             showOnlyLineGraph={true}
           />
         </div>
       </div>
-      {/* The rest of ProgressList (except the line graph) */}
-      <ProgressList progressList={lessons} onDeleteLesson={onDeleteLesson} showOnlyLineGraph={false} />
+      <ProgressList
+        progressList={lessons}
+        onDeleteLesson={onDeleteLesson}
+        lessonTotalPages={lessonTotalPages}
+        showOnlyLineGraph={false}
+      />
     </div>
   );
 };

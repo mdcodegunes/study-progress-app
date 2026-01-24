@@ -3,7 +3,9 @@ import { Lesson } from '../types';
 
 interface ProgressListProps {
     progressList: Lesson[];
-    onDeleteLesson: (index: number) => void;
+    onDeleteLesson: (id: string) => void | Promise<void>;
+    lessonTotalPages: Record<string, number>;
+    showOnlyLineGraph?: boolean;
 }
 
 // Turkish date formatter
@@ -25,9 +27,10 @@ const CLINIC_LESSONS = [
     "Dahiliye", "Pediatri", "Kadın Doğum ve Hastalıklar", "Genel Cerrahi", "Küçük Stajlar"
 ];
 
-const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }> = ({
+const ProgressList: React.FC<ProgressListProps> = ({
     progressList,
     onDeleteLesson,
+    lessonTotalPages,
     showOnlyLineGraph = false
 }) => {
     // Total studied per lesson (pages and questions)
@@ -73,13 +76,19 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
         <div style={{ margin: '0 0 32px 0', background: '#23272a', borderRadius: 8, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
             <h3 style={{ marginTop: 0, color: '#e0e0e0', fontSize: 18 }}>Günlük Çalışma Grafiği</h3>
             <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, minHeight: 120 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 28, minHeight: 120 }}>
                     {dailyKeys.map(date => {
                         const d = dayTotals[date];
+                        // Format hours as "X.YY" to "X saat YY dakika"
+                        const hours = Math.floor(d.hours);
+                        const minutes = Math.round((d.hours - hours) * 60);
+                        const formattedSaat = (hours === 0 && minutes === 0)
+                            ? "0 saat"
+                            : `${hours > 0 ? `${hours} saat` : ""}${hours > 0 && minutes > 0 ? " " : ""}${minutes > 0 ? `${minutes} dakika` : ""}`;
                         return (
-                            <div key={date} style={{ minWidth: 48, textAlign: 'center', color: '#f1f3f4', flex: '0 0 48px' }}>
+                            <div key={date} style={{ minWidth: 60, textAlign: 'center', color: '#f1f3f4', flex: '0 0 60px' }}>
                                 {/* Linear bars */}
-                                <div style={{ height: 80, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 2 }}>
+                                <div style={{ height: 80, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 6 }}>
                                     <div title={`Sayfa: ${d.pages}`} style={{
                                         height: 8,
                                         width: `${(d.pages / maxPages) * 100}%`,
@@ -98,7 +107,7 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
                                         opacity: 0.95,
                                         transition: 'width 0.3s'
                                     }} />
-                                    <div title={`Saat: ${d.hours}`} style={{
+                                    <div title={`Saat: ${formattedSaat}`} style={{
                                         height: 8,
                                         width: `${(d.hours / maxHours) * 100}%`,
                                         background: '#ffb300',
@@ -108,7 +117,12 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
                                         transition: 'width 0.3s'
                                     }} />
                                 </div>
-                                <div style={{ fontSize: 10, marginTop: 6, color: '#b0b0b0', whiteSpace: 'nowrap' }}>
+                                <div style={{ fontSize: 11, marginTop: 8, color: '#b0b0b0', whiteSpace: 'nowrap', lineHeight: 1.4 }}>
+                                    <span style={{ color: '#4caf50', display: 'block' }}>S: {d.pages}</span>
+                                    <span style={{ color: '#2196f3', display: 'block' }}>Q: {d.questions}</span>
+                                    <span style={{ color: '#ffb300', display: 'block' }}>T: {formattedSaat}</span>
+                                </div>
+                                <div style={{ fontSize: 10, marginTop: 4, color: '#b0b0b0', whiteSpace: 'nowrap' }}>
                                     {formatDateTR(date).split(' ')[0]}<br />{formatDateTR(date).split(' ')[1]}
                                 </div>
                             </div>
@@ -310,25 +324,46 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
 
     return (
         <div>
-            
-            {/* Burada eski içeriğiniz devam etmeli */}
             <h2>Çalışma Grafiği</h2>
             <div>
                 <h3>Toplam Çalışılan (Ders Bazında)</h3>
                 <div className="card-row">
                     {BASIC_LESSONS.map(title => {
                         const data = lessonTotals[title];
+                        const totalPages = data ? data.totalPages : lessonTotalPages[title] || '-';
+                        const pages = data ? data.pages : 0;
                         return (
                             <div key={title} className="card-style">
-                                <strong>{title}</strong><br />
-                                <strong>Çalışılan Sayfa:</strong> {data ? `${data.pages} / ${data.totalPages}` : '-'} <br />
+                                <strong style={{ color: "#4caf50" }}>{title}</strong><br />
+                                <strong>Çalışılan Sayfa:</strong> {pages} / {totalPages} <br />
                                 <strong>Çözülen Soru:</strong> {data ? data.questions : '-'} <br />
+                                <strong>Çalışılan Saat:</strong> {
+                                    (() => {
+                                        const totalHours = progressList
+                                            .filter(l => l.title === title)
+                                            .reduce((sum, l) => sum + (l.hoursStudied || 0), 0);
+                                        const hours = Math.floor(totalHours);
+                                        const minutes = Math.round((totalHours - hours) * 60);
+                                        if (hours === 0 && minutes === 0) return "0 saat";
+                                        if (hours > 0 && minutes > 0) return `${hours} saat ${minutes} dakika`;
+                                        if (hours > 0) return `${hours} saat`;
+                                        return `${minutes} dakika`;
+                                    })()
+                                } <br />
+                                <strong>Gün:</strong> {
+                                    (() => {
+                                        const days = new Set(progressList.filter(l => l.title === title).map(l => l.date));
+                                        return days.size;
+                                    })()
+                                } <br />
+                                <strong>Toplam Sayfa:</strong> {totalPages} <br />
+                                <strong>Kalan Sayfa:</strong> {totalPages !== '-' ? Math.max(0, totalPages - pages) : '-'} <br />
                                 <strong>Kaçıncı Tekrar:</strong> {data ? data.repeatTimes : '-'} <br />
-                                <strong>İlerleme:</strong> {data ? getPercent(data.pages, data.totalPages) : 0}%
+                                <strong>İlerleme:</strong> {totalPages !== '-' && totalPages > 0 ? getPercent(pages, totalPages) : 0}%
                                 <div className="progress-bar-bg">
                                     <div
                                         className="progress-bar-fill"
-                                        style={{ width: data ? `${getPercent(data.pages, data.totalPages)}%` : '0%' }}
+                                        style={{ width: totalPages !== '-' && totalPages > 0 ? `${getPercent(pages, totalPages)}%` : '0%' }}
                                     />
                                 </div>
                             </div>
@@ -338,17 +373,42 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
                 <div className="card-row">
                     {CLINIC_LESSONS.map(title => {
                         const data = lessonTotals[title];
+                        const totalPages = data ? data.totalPages : lessonTotalPages[title] || '-';
+                        const pages = data ? data.pages : 0;
                         return (
                             <div key={title} className="card-style">
-                                <strong>{title}</strong><br />
-                                <strong>Çalışılan Sayfa:</strong> {data ? `${data.pages} / ${data.totalPages}` : '-'} <br />
+                                <strong style={{ color: BASIC_LESSONS.includes(title) ? "#2196f3" : "#ff9800" }}>{title}</strong><br />
+                                <strong>Çalışılan Sayfa:</strong> {pages} / {totalPages} <br />
                                 <strong>Çözülen Soru:</strong> {data ? data.questions : '-'} <br />
+                                <strong>Çalışılan Saat:</strong> {
+                                    (() => {
+                                        // Sum all hours for this lesson
+                                        const totalHours = progressList
+                                            .filter(l => l.title === title)
+                                            .reduce((sum, l) => sum + (l.hoursStudied || 0), 0);
+                                        const hours = Math.floor(totalHours);
+                                        const minutes = Math.round((totalHours - hours) * 60);
+                                        if (hours === 0 && minutes === 0) return "0 saat";
+                                        if (hours > 0 && minutes > 0) return `${hours} saat ${minutes} dakika`;
+                                        if (hours > 0) return `${hours} saat`;
+                                        return `${minutes} dakika`;
+                                    })()
+                                } <br />
+                                <strong>Gün:</strong> {
+                                    // Count unique days this lesson was studied
+                                    (() => {
+                                        const days = new Set(progressList.filter(l => l.title === title).map(l => l.date));
+                                        return days.size;
+                                    })()
+                                } <br />
+                                <strong>Toplam Sayfa:</strong> {totalPages} <br />
+                                <strong>Kalan Sayfa:</strong> {totalPages !== '-' ? Math.max(0, totalPages - pages) : '-'} <br />
                                 <strong>Kaçıncı Tekrar:</strong> {data ? data.repeatTimes : '-'} <br />
-                                <strong>İlerleme:</strong> {data ? getPercent(data.pages, data.totalPages) : 0}%
+                                <strong>İlerleme:</strong> {totalPages !== '-' && totalPages > 0 ? getPercent(pages, totalPages) : 0}%
                                 <div className="progress-bar-bg">
                                     <div
                                         className="progress-bar-fill"
-                                        style={{ width: data ? `${getPercent(data.pages, data.totalPages)}%` : '0%' }}
+                                        style={{ width: totalPages !== '-' && totalPages > 0 ? `${getPercent(pages, totalPages)}%` : '0%' }}
                                     />
                                 </div>
                             </div>
@@ -362,12 +422,23 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
                     <ul style={{ margin: 0 }}>
                         {Object.entries(dayTotals)
                             .sort(([dateA], [dateB]) => dateA < dateB ? 1 : -1)
-                            .map(([date, data]) => (
-                                <li key={date}>
-                                    <strong>{formatDateTR(date)}:</strong> {data.pages} sayfa, {data.questions} soru, {data.hours} saat<br />
-                                    <span>Saatte Ortalama Sayfa/Soru: {data.hours > 0 ? (data.pages / data.hours).toFixed(2) : '-'} / {data.hours > 0 ? (data.questions / data.hours).toFixed(2) : '-'}</span>
-                                </li>
-                            ))}
+                            .map(([date, data]) => {
+                                // Format hours as "X saat Y dakika"
+                                const hours = Math.floor(data.hours);
+                                const minutes = Math.round((data.hours - hours) * 60);
+                                const formattedTime =
+                                    hours > 0 || minutes > 0
+                                        ? `${hours > 0 ? `${hours} saat` : ''}${hours > 0 && minutes > 0 ? ' ' : ''}${minutes > 0 ? `${minutes} dakika` : ''}`
+                                        : '0 saat';
+                                return (
+                                    <li key={date}>
+                                        <strong>{formatDateTR(date)}:</strong> {data.pages} sayfa, {data.questions} soru, {formattedTime}<br />
+                                        <span>
+                                            Saatte Ortalama Sayfa/Soru: {data.hours > 0 ? (data.pages / data.hours).toFixed(2) : '-'} / {data.hours > 0 ? (data.questions / data.hours).toFixed(2) : '-'}
+                                        </span>
+                                    </li>
+                                );
+                            })}
                     </ul>
                 </div>
             </div>
@@ -403,7 +474,16 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
                             <strong>Çalışılan Sayfa:</strong> {lesson.pageStudied} / {lesson.totalPages} <br />
                             <strong>Çözülen Soru:</strong> {lesson.questionsSolved} <br />
                             <strong>Kaçıncı Tekrar:</strong> {lesson.repeatTimes} <br />
-                            <strong>Çalışılan saat:</strong> {lesson.hoursStudied}
+                            <strong>Çalışılan saat:</strong> {
+                                (() => {
+                                    const hours = Math.floor(lesson.hoursStudied);
+                                    const minutes = Math.round((lesson.hoursStudied - hours) * 60);
+                                    if (hours === 0 && minutes === 0) return "0 saat";
+                                    if (hours > 0 && minutes > 0) return `${hours} saat ${minutes} dakika`;
+                                    if (hours > 0) return `${hours} saat`;
+                                    return `${minutes} dakika`;
+                                })()
+                            }
                         </div>
                         <button
                             style={{
@@ -440,7 +520,7 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
                                 <div style={{ marginTop: 8, display: "flex", gap: 10 }}>
                                     <button
                                         style={{ background: "#d32f2f", color: "#fff", border: "none", borderRadius: 6, padding: "6px 16px", fontWeight: 600 }}
-                                        onClick={() => { onDeleteLesson(index); setDeleteIndex(null); }}
+                                        onClick={() => { if (lesson.id) { onDeleteLesson(lesson.id); } setDeleteIndex(null); }}
                                     >
                                         Evet
                                     </button>
@@ -460,7 +540,7 @@ const ProgressList: React.FC<ProgressListProps & { showOnlyLineGraph?: boolean }
     );
 };
 
-const TARGET_DATE = new Date("2025-08-17T00:00:00");
+const TARGET_DATE = new Date("2025-03-15T00:00:00");
 
 const DaysLeft = () => {
     const getDaysLeft = () => {
