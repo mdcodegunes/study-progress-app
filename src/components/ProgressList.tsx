@@ -549,13 +549,8 @@ function startOfDay(date: Date) {
 }
 
 const DaysLeft = () => {
-    const getDayMetrics = () => {
+    const getDaysLeft = () => {
         const today = startOfDay(new Date());
-        const target = startOfDay(TARGET_DATE);
-
-        // Positive => days remaining until TARGET_DATE, negative => days since TARGET_DATE
-        const diffDays = Math.ceil((target.getTime() - today.getTime()) / MS_PER_DAY);
-
         // Next March 15 occurrence (use local time, start of day)
         const month = TARGET_DATE.getMonth();
         const day = TARGET_DATE.getDate();
@@ -563,16 +558,14 @@ const DaysLeft = () => {
         if (next.getTime() < today.getTime()) {
             next = new Date(today.getFullYear() + 1, month, day);
         }
-        const nextDiffDays = Math.ceil((next.getTime() - today.getTime()) / MS_PER_DAY);
-
-        return { diffDays, nextDiffDays };
+        return Math.max(0, Math.ceil((next.getTime() - today.getTime()) / MS_PER_DAY));
     };
 
-    const [{ diffDays, nextDiffDays }, setMetrics] = useState(getDayMetrics());
+    const [daysLeft, setDaysLeft] = useState(getDaysLeft());
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setMetrics(getDayMetrics());
+            setDaysLeft(getDaysLeft());
         }, 60 * 1000);
         return () => clearInterval(timer);
     }, []);
@@ -593,12 +586,7 @@ const DaysLeft = () => {
             marginLeft: 'auto',
             marginRight: 'auto'
         }}>
-            {diffDays >= 0
-                ? `Sınava Kalan Gün: ${diffDays}`
-                : `Sınav Geçeli Gün: ${Math.abs(diffDays)}`}
-            <div style={{ marginTop: 6, fontSize: 14, fontWeight: 600, color: '#f1f3f4' }}>
-                Bir Sonraki Sınava Kalan Gün: {nextDiffDays}
-            </div>
+            Sınava Kalan Gün: {daysLeft}
         </div>
     );
 };
