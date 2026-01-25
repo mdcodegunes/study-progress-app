@@ -5,3 +5,5 @@ build-output*.txt
 direct-build-output*.txt
 rs-build-output*.txt
 npm-debug*.log
+
+deploy-build-log.txt

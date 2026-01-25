@@ -542,18 +542,37 @@ const ProgressList: React.FC<ProgressListProps> = ({
 
 const TARGET_DATE = new Date("2025-03-15T00:00:00");
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+function startOfDay(date: Date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 const DaysLeft = () => {
-    const getDaysLeft = () => {
-        const now = new Date();
-        const diff = TARGET_DATE.getTime() - now.getTime();
-        return diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) : 0;
+    const getDayMetrics = () => {
+        const today = startOfDay(new Date());
+        const target = startOfDay(TARGET_DATE);
+
+        // Positive => days remaining until TARGET_DATE, negative => days since TARGET_DATE
+        const diffDays = Math.ceil((target.getTime() - today.getTime()) / MS_PER_DAY);
+
+        // Next March 15 occurrence (use local time, start of day)
+        const month = TARGET_DATE.getMonth();
+        const day = TARGET_DATE.getDate();
+        let next = new Date(today.getFullYear(), month, day);
+        if (next.getTime() < today.getTime()) {
+            next = new Date(today.getFullYear() + 1, month, day);
+        }
+        const nextDiffDays = Math.ceil((next.getTime() - today.getTime()) / MS_PER_DAY);
+
+        return { diffDays, nextDiffDays };
     };
 
-    const [days, setDays] = useState(getDaysLeft());
+    const [{ diffDays, nextDiffDays }, setMetrics] = useState(getDayMetrics());
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setDays(getDaysLeft());
+            setMetrics(getDayMetrics());
         }, 60 * 1000);
         return () => clearInterval(timer);
     }, []);
@@ -574,7 +593,12 @@ const DaysLeft = () => {
             marginLeft: 'auto',
             marginRight: 'auto'
         }}>
-            Sınava Kalan Gün: {days}
+            {diffDays >= 0
+                ? `Sınava Kalan Gün: ${diffDays}`
+                : `Sınav Geçeli Gün: ${Math.abs(diffDays)}`}
+            <div style={{ marginTop: 6, fontSize: 14, fontWeight: 600, color: '#f1f3f4' }}>
+                Bir Sonraki Sınava Kalan Gün: {nextDiffDays}
+            </div>
         </div>
     );
 };
