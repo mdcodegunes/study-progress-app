@@ -4,7 +4,28 @@ import ProgressList from './components/ProgressList';
 import LessonPagesForm from './components/LessonPagesForm';
 import { Lesson } from './types';
 import { db, addLessonToFirestore } from './firebase';
+import { BUILD_VERSION } from './build';
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+
+const BuildBadge = () => (
+  <div style={{
+    position: "fixed",
+    top: 12,
+    right: 12,
+    zIndex: 9999,
+    background: "#23272a",
+    color: "#90caf9",
+    border: "1px solid #333",
+    borderRadius: 8,
+    padding: "6px 12px",
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: 0.4,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.18)"
+  }}>
+    Build: {BUILD_VERSION}
+  </div>
+);
 
 const App: React.FC = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -96,6 +117,7 @@ const App: React.FC = () => {
         alignItems: "center",
         padding: "40px 0"
       }}>
+        <BuildBadge />
         <button
           onClick={() => setShowPagesForm(false)}
           style={{
@@ -120,6 +142,7 @@ const App: React.FC = () => {
 
   return (
     <div>
+      <BuildBadge />
       <button
         onClick={() => setShowPagesForm(true)}
         style={{

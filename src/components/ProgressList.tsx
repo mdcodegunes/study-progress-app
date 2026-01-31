@@ -33,6 +33,12 @@ const ProgressList: React.FC<ProgressListProps> = ({
     lessonTotalPages,
     showOnlyLineGraph = false
 }) => {
+    const formatHoursShort = (hours: number) => {
+        if (!Number.isFinite(hours)) return "0";
+        if (hours === 0) return "0";
+        return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
+    };
+
     // Total studied per lesson (pages and questions)
     const lessonTotals = progressList.reduce<Record<string, { pages: number; questions: number; totalPages: number; repeatTimes: number }>>((acc, lesson) => {
         if (!acc[lesson.title]) {
@@ -180,6 +186,17 @@ const ProgressList: React.FC<ProgressListProps> = ({
         const questionsPoints = getPoints(questionsArr, maxQuestionsY);
         const hoursPoints = getPoints(hoursArr, maxHoursY);
 
+        const valueLabelStyle: React.CSSProperties = {
+            paintOrder: 'stroke',
+            stroke: '#23272a',
+            strokeWidth: 5,
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+        };
+
+        const labelFontSize = 11;
+        const labelOffset = (i: number, base: number, step: number) => base + (i % 2 === 0 ? -step : step);
+
         return (
             <div style={{
                 background: '#23272a',
@@ -263,19 +280,52 @@ const ProgressList: React.FC<ProgressListProps> = ({
                         {pagesPoints.map(([x, y]: any, i: number) => (
                             <g key={'p'+i}>
                                 <circle cx={x} cy={y} r={5} fill="#4caf50" stroke="#23272a" strokeWidth="2" />
-                                <text x={x} y={y-12} fontSize="12" fill="#4caf50" textAnchor="middle" fontWeight="bold">{pagesArr[i]}</text>
+                                <text
+                                    x={x - 10}
+                                    y={labelOffset(i, y - 14, 8)}
+                                    fontSize={labelFontSize}
+                                    fill="#4caf50"
+                                    textAnchor="middle"
+                                    fontWeight="bold"
+                                    style={valueLabelStyle}
+                                    dominantBaseline="middle"
+                                >
+                                    {pagesArr[i]}
+                                </text>
                             </g>
                         ))}
                         {questionsPoints.map(([x, y]: any, i: number) => (
                             <g key={'q'+i}>
                                 <circle cx={x} cy={y} r={5} fill="#2196f3" stroke="#23272a" strokeWidth="2" />
-                                <text x={x} y={y-12} fontSize="12" fill="#2196f3" textAnchor="middle" fontWeight="bold">{questionsArr[i]}</text>
+                                <text
+                                    x={x + 12}
+                                    y={labelOffset(i, y - 14, 8)}
+                                    fontSize={labelFontSize}
+                                    fill="#2196f3"
+                                    textAnchor="middle"
+                                    fontWeight="bold"
+                                    style={valueLabelStyle}
+                                    dominantBaseline="middle"
+                                >
+                                    {questionsArr[i]}
+                                </text>
                             </g>
                         ))}
                         {hoursPoints.map(([x, y]: any, i: number) => (
                             <g key={'h'+i}>
                                 <circle cx={x} cy={y} r={5} fill="#ffb300" stroke="#23272a" strokeWidth="2" />
-                                <text x={x} y={y+20} fontSize="12" fill="#ffb300" textAnchor="middle" fontWeight="bold">{hoursArr[i]}</text>
+                                <text
+                                    x={x}
+                                    y={labelOffset(i, y + 24, 8)}
+                                    fontSize={labelFontSize}
+                                    fill="#ffb300"
+                                    textAnchor="middle"
+                                    fontWeight="bold"
+                                    style={valueLabelStyle}
+                                    dominantBaseline="middle"
+                                >
+                                    {formatHoursShort(hoursArr[i])}
+                                </text>
                             </g>
                         ))}
                         {/* X labels */}
